@@ -1,5 +1,6 @@
 {
-  "builds": [{ "src": "package.json", "use": "@vercel/static-build" }],
-  "routes": [{ "src": "/(.*)", "dest": "/index.html" }],
-  "outputDirectory": "dist/spa"
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist/spa",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

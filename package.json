@@ -6,6 +6,7 @@
   "author": "devGerowil <developer.wil2026@gmail.com>",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "lint": "prettier --write \"**/*.{js,ts,vue,css,scss,html,md,json}\" --ignore-path .gitignore && eslint --fix -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
     "lint:check": "prettier \"**/*.{js,ts,vue,css,scss,html,md,json}\" --ignore-path .gitignore && eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
@@ -49,6 +50,6 @@
     "vuejs"
   ],
   "engines": {
-    "node": "^22.22.0 || ^24.0.0 || >=26"
+    "node": "24.x"
   }
 }
