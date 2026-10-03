@@ -1,0 +1,117 @@
+@use 'sass:color';
+
+// Tipografías de la aplicación
+:root {
+  --app-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --app-font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--app-font-body);
+  color: $app-text;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Utilidades propias de la aplicación
+// --------------------------------------------------
+
+.app-bg {
+  background-color: $app-bg;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+// Superficies
+.app-card {
+  background: $app-surface;
+  border: 1px solid $app-border;
+  border-radius: 20px;
+  box-shadow: $elevation-2;
+}
+
+.app-surface-flat {
+  background: $app-surface;
+  border: 1px solid $app-border;
+  border-radius: 16px;
+}
+
+// Tipografía
+.text-display {
+  font-family: var(--app-font-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: $app-text;
+}
+
+.text-muted {
+  color: $app-text-muted;
+}
+
+.text-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: $app-text-muted;
+}
+
+// Contenido largo pegado desde Word / Google Docs
+.app-prose {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: color.adjust($app-text, $lightness: -4%);
+  font-size: 1.03rem;
+  line-height: 1.75;
+}
+
+// Transiciones suaves
+.app-fade-enter-active,
+.app-fade-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.app-fade-enter-from,
+.app-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+// Ajustes finos de Quasar para un acabado minimalista
+.q-btn {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.q-field--outlined .q-field__control::before {
+  border-color: $app-border;
+}
+
+.q-field--outlined.q-field--focused .q-field__control::after {
+  border-width: 1.5px;
+}
+
+.q-card {
+  box-shadow: none;
+}
+
+.q-chip {
+  font-weight: 500;
+}
+
+.q-dialog__inner > div {
+  border-radius: 20px;
+}
+
+// Ocultar los inputs de archivo nativos (el QUploader ya gestiona el drag & drop)
+input[type='file'] {
+  display: none;
+}
