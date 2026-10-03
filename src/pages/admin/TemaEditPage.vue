@@ -73,6 +73,9 @@
                 <p class="editor__bloque-ayuda">
                   PDF, imágenes y documentos. Los estudiantes podrán verlos y descargarlos.
                 </p>
+                <p v-if="!form.id" class="editor__bloque-ayuda editor__bloque-ayuda--pendiente">
+                  Puedes elegir archivos ahora; se subirán al guardar el tema.
+                </p>
               </div>
               <q-btn
                 color="primary"
@@ -80,7 +83,7 @@
                 no-caps
                 icon="upload"
                 label="Subir"
-                :disable="temaId === null"
+                :disable="subiendo || guardando"
                 @click="dialogoSubida = true"
               />
             </div>
@@ -93,15 +96,18 @@
                 rounded
                 size="5px"
               />
-              <span>Subiendo {{ subidos + 1 }} de {{ totalPendientes }}…</span>
+              <span>
+                Subiendo {{ Math.min(subidos + 1, totalPendientes) }} de {{ totalPendientes }}
+                <span v-if="archivoActual">· {{ archivoActual }}</span>
+              </span>
             </div>
 
             <div v-if="cargandoArchivos" class="editor__cargando">
               <q-spinner-dots size="28px" color="primary" />
             </div>
 
-            <template v-else-if="archivos.length > 0">
-              <ul class="editor__archivos">
+            <template v-else-if="archivos.length > 0 || pendientes.length > 0">
+              <ul v-if="archivos.length > 0" class="editor__archivos">
                 <li v-for="(archivo, indice) in archivos" :key="archivo.id" class="editor__archivo">
                   <q-icon name="drag_indicator" size="18px" color="grey-5" />
 
@@ -152,6 +158,36 @@
                   </div>
                 </li>
               </ul>
+
+              <ul v-if="pendientes.length > 0" class="editor__archivos">
+                <li v-for="p in pendientes" :key="p.id" class="editor__archivo">
+                  <q-icon name="schedule" size="18px" color="grey-5" />
+
+                  <div class="editor__archivo-datos">
+                    <span class="editor__archivo-nombre">{{ p.file.name }}</span>
+                    <span class="editor__archivo-meta">
+                      {{ formatTamano(p.file.size) }}
+                      <q-badge color="orange-8" class="editor__pendiente-badge">Pendiente</q-badge>
+                    </span>
+                  </div>
+
+                  <div class="editor__archivo-acciones">
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      icon="close"
+                      size="sm"
+                      color="grey-7"
+                      aria-label="Quitar de pendientes"
+                      :disable="subiendo"
+                      @click="quitarPendiente(p.id)"
+                    >
+                      <q-tooltip>Quitar</q-tooltip>
+                    </q-btn>
+                  </div>
+                </li>
+              </ul>
             </template>
 
             <VacioEstado
@@ -166,7 +202,7 @@
                 no-caps
                 icon="upload"
                 label="Subir archivos"
-                :disable="temaId === null"
+                :disable="subiendo || guardando"
                 @click="dialogoSubida = true"
               />
             </VacioEstado>
@@ -258,17 +294,31 @@
         </aside>
       </div>
 
-      <q-dialog v-model="dialogoSubida">
+      <q-dialog v-model="dialogoSubida" :persistent="subiendo">
         <q-card class="subida-dialog">
           <q-card-section>
             <h3 class="subida-dialog__titulo">Subir archivos</h3>
-            <p class="subida-dialog__ayuda">
+            <p v-if="!subiendo" class="subida-dialog__ayuda">
               Se añadirán al final de la lista de «{{ form.titulo || 'este tema' }}».
             </p>
           </q-card-section>
 
           <q-card-section>
-            <SubirArchivos @seleccionar="subir" />
+            <template v-if="subiendo">
+              <q-linear-progress
+                :value="progresoSubida / 100"
+                color="primary"
+                track-color="grey-3"
+                rounded
+                size="6px"
+              />
+              <p class="subida-dialog__progreso">
+                Subiendo {{ Math.min(subidos + 1, totalPendientes) }} de {{ totalPendientes }}
+                <span v-if="archivoActual">· {{ archivoActual }}</span>
+              </p>
+            </template>
+
+            <SubirArchivos v-else @seleccionar="subir" />
           </q-card-section>
 
           <q-card-actions align="right" class="q-px-md q-pb-md">
@@ -281,7 +331,7 @@
               label="Cancelar"
               @click="cancelarSubida"
             />
-            <q-btn flat no-caps label="Cerrar" v-close-popup />
+            <q-btn v-else flat no-caps label="Cerrar" v-close-popup />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -394,6 +444,7 @@ const archivos = ref<Archivo[]>([]);
 const progresoSubida = ref(0);
 const totalPendientes = ref(0);
 const subidos = ref(0);
+const archivoActual = ref('');
 
 const guardando = ref(false);
 const subiendo = ref(false);
@@ -405,8 +456,7 @@ const confirmarTema = ref(false);
 const borrandoArchivo = ref(false);
 const borrandoTema = ref(false);
 const archivoABorrar = ref<Archivo | null>(null);
-
-const temaId = computed(() => (esNuevo.value ? null : form.value.id || null));
+const pendientes = ref<{ id: string; file: File }[]>([]);
 
 const reglaTitulo = (valor: string) => Boolean(valor?.trim()) || 'El título es obligatorio';
 
@@ -431,6 +481,8 @@ async function recargarArchivos() {
 }
 
 async function cargar() {
+  pendientes.value = [];
+
   if (esNuevo.value) {
     archivos.value = [];
     return;
@@ -482,18 +534,28 @@ async function guardar() {
       orden: Number.isFinite(form.value.orden) ? form.value.orden : 0,
     };
 
-    if (esNuevo.value) {
+    const eraNuevo = esNuevo.value;
+
+    if (eraNuevo) {
       const tema = await store.crear(datos, auth.perfil?.id ?? null);
       form.value.id = tema.id;
-      avisar('Tema creado. Ya puedes subirle los archivos.');
       await router.replace({
         name: 'tema-editar',
         params: { id: tema.id },
       });
     } else {
       await store.guardar(form.value.id, datos);
-      avisar('Cambios guardados.');
       await recargarArchivos();
+    }
+
+    if (pendientes.value.length > 0) {
+      const porSubir = pendientes.value.map((p) => p.file);
+      const ordenBase = archivos.value.length;
+      pendientes.value = [];
+      const fallidos = await subirLista(form.value.id, porSubir, ordenBase);
+      pendientes.value = fallidos.map((file) => ({ id: crypto.randomUUID(), file }));
+    } else {
+      avisar(eraNuevo ? 'Tema creado.' : 'Cambios guardados.');
     }
   } catch (error) {
     avisar(mensajeDeError(error), 'negative');
@@ -502,42 +564,64 @@ async function guardar() {
   }
 }
 
-async function subir(pendientes: File[]) {
-  if (!form.value.id) {
-    avisar('Guarda el tema antes de subir archivos.', 'negative');
-    return;
-  }
+async function subirLista(temaId: string, files: File[], ordenBase: number): Promise<File[]> {
+  const fallidos: File[] = [];
 
   subiendo.value = true;
-  dialogoSubida.value = false;
-  totalPendientes.value = pendientes.length;
+  cancelando.value = false;
+  totalPendientes.value = files.length;
   subidos.value = 0;
   progresoSubida.value = 0;
+  archivoActual.value = '';
 
-  for (const [indice, archivo] of pendientes.entries()) {
+  for (const [indice, archivo] of files.entries()) {
     if (cancelando.value) break;
 
-    const orden = archivos.value.length + indice;
+    archivoActual.value = archivo.name;
+    const orden = ordenBase + indice;
 
     try {
-      const registro = await subirArchivo(form.value.id, archivo, orden, auth.perfil?.id ?? null);
+      const registro = await subirArchivo(temaId, archivo, orden, auth.perfil?.id ?? null);
       archivos.value = [...archivos.value, registro];
       subidos.value += 1;
     } catch (error) {
+      fallidos.push(archivo);
       avisar(`No se pudo subir «${archivo.name}». ${mensajeDeError(error)}`, 'negative');
     } finally {
-      progresoSubida.value = ((indice + 1) / pendientes.length) * 100;
+      progresoSubida.value = ((indice + 1) / files.length) * 100;
     }
   }
 
   cancelando.value = false;
   subiendo.value = false;
+  archivoActual.value = '';
   totalPendientes.value = 0;
 
   if (subidos.value > 0) {
     const n = subidos.value;
     avisar(`${n} archivo${n === 1 ? '' : 's'} subido${n === 1 ? '' : 's'}.`);
   }
+
+  return fallidos;
+}
+
+async function subir(files: File[]) {
+  if (!form.value.id) {
+    pendientes.value = [
+      ...pendientes.value,
+      ...files.map((file) => ({ id: crypto.randomUUID(), file })),
+    ];
+    dialogoSubida.value = false;
+    avisar('Se subirán cuando guardes el tema.', 'info');
+    return;
+  }
+
+  await subirLista(form.value.id, files, archivos.value.length);
+  dialogoSubida.value = false;
+}
+
+function quitarPendiente(id: string) {
+  pendientes.value = pendientes.value.filter((p) => p.id !== id);
 }
 
 function cancelarSubida() {
@@ -769,6 +853,12 @@ onMounted(cargar);
 
 .subida-dialog__ayuda {
   margin: 0;
+  font-size: 0.87rem;
+  color: $app-text-muted;
+}
+
+.subida-dialog__progreso {
+  margin: 10px 0 0;
   font-size: 0.87rem;
   color: $app-text-muted;
 }

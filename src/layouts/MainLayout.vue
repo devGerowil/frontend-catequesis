@@ -64,10 +64,11 @@ const auth = useAuthStore();
 
 <style scoped lang="scss">
 .app-header {
-  background: rgba(251, 249, 247, 0.82);
+  background: rgba($dark, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid $app-border;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: #fff;
 }
 
 .app-brand {
@@ -75,7 +76,7 @@ const auth = useAuthStore();
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: $app-text;
+  color: #fff;
 }
 
 .app-brand__mark {
@@ -97,7 +98,7 @@ const auth = useAuthStore();
 
 .app-brand__sub {
   font-size: 0.74rem;
-  color: $app-text-muted;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .app-footer {

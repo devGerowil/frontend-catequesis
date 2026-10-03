@@ -1,16 +1,28 @@
 <template>
   <q-page>
     <main class="app-container tema">
-      <q-btn
-        flat
-        dense
-        no-caps
-        color="grey-8"
-        icon="arrow_back"
-        label="Todos los temas"
-        class="tema__volver"
-        :to="{ name: 'inicio' }"
-      />
+      <div class="tema__barra">
+        <q-btn
+          flat
+          dense
+          no-caps
+          color="grey-8"
+          icon="arrow_back"
+          label="Todos los temas"
+          class="tema__volver"
+          :to="{ name: 'inicio' }"
+        />
+
+        <q-btn
+          v-if="tema && auth.esCatequista"
+          color="primary"
+          unelevated
+          no-caps
+          icon="edit"
+          label="Editar tema"
+          :to="{ name: 'tema-editar', params: { id: tema.id } }"
+        />
+      </div>
 
       <div v-if="store.cargando" class="tema__cargando">
         <q-spinner-dots size="34px" color="primary" />
@@ -157,9 +169,16 @@ onMounted(async () => {
   padding-bottom: 64px;
 }
 
+.tema__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
 .tema__volver {
   margin-left: -10px;
-  margin-bottom: 18px;
 }
 
 .tema__cargando {

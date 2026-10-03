@@ -96,7 +96,7 @@ const visible = computed(() => {
   if (!texto) return publicados;
 
   return publicados.filter((tema) =>
-    normalizar(`${tema.titulo} ${tema.descripcion ?? ''}`).includes(texto),
+    normalizar(`${tema.titulo} ${tema.descripcion ?? ''}`).includes(texto)
   );
 });
 

@@ -15,8 +15,8 @@
           dense
           no-caps
           narrow-indicator
-          active-color="primary"
-          indicator-color="primary"
+          active-color="white"
+          indicator-color="secondary"
           align="left"
           class="app-tabs"
         >
@@ -61,10 +61,11 @@ async function salir() {
 
 <style scoped lang="scss">
 .app-header {
-  background: rgba(251, 249, 247, 0.85);
+  background: rgba($dark, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid $app-border;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: #fff;
 }
 
 .app-header__title {
